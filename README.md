@@ -1,6 +1,6 @@
 # FoxyIntel
 
-FoxyIntel is a commandline tool that uses OpenAI API to interact with ChatGPT. It reads text files, stores them to local vector database (ChromaDB) and feeds them to ChatGPT. Additionally user can ask questions using Google via Serpent API.
+FoxyIntel is a commandline tool that uses OpenAI API to interact with ChatGPT. It reads text files, stores them to local vector database (ChromaDB) and feeds them to ChatGPT. Additionally user can ask questions using Google via Serper API.
 
 ## Known problems
 
@@ -22,7 +22,7 @@ Clone repository from GitHub.
 
 `cd FoxyIntel`
 
-Rename `.env_example` to `.env` and add your OpenAI and Serpent API keys to `.env` file
+Rename `.env_example` to `.env` and add your OpenAI and Serper API keys to `.env` file
 
 Build docker image
 
