@@ -30,6 +30,10 @@ Build docker image
 
 Run docker in interactive mode. This command mounts the home directory to root so it is possible to upload files from host environment to docker.
 
+On Linux
+
 `docker run -v $HOME:/root -i -t foxy-intel`
 
+On Windows
 
+`docker run -v {$HOME}:/root -i -t foxy-intel`
