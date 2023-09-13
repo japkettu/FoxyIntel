@@ -1,0 +1,34 @@
+
+Input{
+    
+    border: tall blue;
+    margin-bottom: 2;
+}
+
+LoadingIndicator{
+    visibility: hidden;
+}
+
+#settings_input{
+
+    width: 15;
+    margin-left: 1;
+
+}
+
+#upload_btn{
+    align: center bottom;
+}
+
+#settings_btn{
+    align: right bottom;
+}
+
+#settings_radioset{
+    dock: top;
+    margin-bottom: 5;
+}
+
+#file_listview{
+    margin-top: 5;
+}
