@@ -1,3 +1,5 @@
 .env
 chroma.db/
 venv/
+Dockerfile-dev
+

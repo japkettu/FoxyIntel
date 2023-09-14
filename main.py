@@ -1,4 +1,5 @@
 from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 from dotenv import load_dotenv
 from pathlib import Path
 from decimal import Decimal, InvalidOperation
@@ -62,16 +63,18 @@ class Serper:
 
 class AI:
 
-    def __init__(self, api_key, temperature):
+    def __init__(self, api_key, temperature, model, tokens):
         self.api_key = api_key
         self.temperature = temperature
-        self.llm = OpenAI(openai_api_key=api_key, temperature=temperature)
+        self.tokens = tokens
+        self.model = model
+        self.llm = OpenAI(openai_api_key=api_key, temperature=temperature, model=self.model, max_tokens=self.tokens)
         self.answer = None
         self.file = None
         self.remove_file = None
     def set_temperature(self, temperature):
         self.temperature = float(temperature)
-        self.llm = OpenAI(openai_api_key=self.api_key, temperature=self.temperature)
+        self.llm = OpenAI(openai_api_key=self.api_key, temperature=self.temperature, model=self.model, max_tokens=self.tokens)
     
     def upload(self):
         raw_doc = TextLoader(self.file).load()
@@ -130,7 +133,7 @@ class MyApp(App):
             return False
 
     def compose(self) -> ComposeResult:
-        self.ai = AI(OPENAI_API_KEY, 0.1)
+        self.ai = AI(OPENAI_API_KEY, 0.1, model="text-davinci-003", tokens=512)
         self.serper = Serper(SERPER_API_KEY, self.ai.llm)
         self.source = "file"
         
