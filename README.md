@@ -45,6 +45,6 @@ On Linux
 
 `docker run -v $HOME:/root -i -t --mount=source=foxy-intel-vol,target=/app foxy-intel`
 
-On Windows
+On Windows (PowerShell)
 
-`docker run -v {$HOME}:/root -i -t --mount=source=foxy-intel-vol,target=/app foxy-intel`
+`docker run -v ${HOME}:/root -v foxy-intel-vol:/app -i -t foxy-intel`
