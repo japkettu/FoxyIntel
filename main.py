@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 import os
 from langchain.document_loaders import TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain.agents.agent_toolkits import (
@@ -36,6 +37,7 @@ load_dotenv()
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 SERPER_API_KEY = os.getenv('SERPER_API_KEY')
+EMBEDDING_FUNCTION = os.getenv('EMBEDDING_FUNCTION')
 
 
 
@@ -59,11 +61,13 @@ class Serper:
     def chat(self, command):
 
         return self.self_ask_with_search.run(command)
-    
+
+
 
 class AI:
 
-    def __init__(self, api_key, temperature, model, tokens):
+    def __init__(self, api_key, temperature, model, tokens, embedding):
+        self.embedding = embedding
         self.api_key = api_key
         self.temperature = temperature
         self.tokens = tokens
@@ -80,12 +84,12 @@ class AI:
         raw_doc = TextLoader(self.file).load()
         text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
         docs = text_splitter.split_documents(raw_doc)
-        db = Chroma.from_documents(docs, OpenAIEmbeddings(),persist_directory="./chroma.db")
+        db = Chroma.from_documents(docs, self.embedding,persist_directory="./chroma.db")
 
     def remove(self):
 
         if self.remove_file != None:
-            db = Chroma(persist_directory="./chroma.db", embedding_function=OpenAIEmbeddings())
+            db = Chroma(persist_directory="./chroma.db", embedding_function=self.embedding)
             
             get = db.get(include=["metadatas"], where={"source":{"$eq":str(self.remove_file)}})
             if get != None:
@@ -95,7 +99,7 @@ class AI:
 
     def chat(self, command):
 
-        db = Chroma(persist_directory="./chroma.db", embedding_function=OpenAIEmbeddings())
+        db = Chroma(persist_directory="./chroma.db", embedding_function=self.embedding)
 
         vectorstore_info = VectorStoreInfo(
             name="test_db",
@@ -111,7 +115,7 @@ class AI:
     def get_documents(self):
 
         doc_list = set()
-        db = Chroma(persist_directory="./chroma.db", embedding_function=OpenAIEmbeddings())
+        db = Chroma(persist_directory="./chroma.db", embedding_function=self.embedding)
         docs = db.get()
         metas = docs["metadatas"]
 
@@ -133,7 +137,16 @@ class MyApp(App):
             return False
 
     def compose(self) -> ComposeResult:
-        self.ai = AI(OPENAI_API_KEY, 0.1, model="text-davinci-003", tokens=512)
+
+        self.embedding = None
+        match EMBEDDING_FUNCTION:
+            case "openai":
+                self.embedding = OpenAIEmbeddings()
+            case "huggingface":
+                self.embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2", model_kwargs={"device":"cpu"})
+
+
+        self.ai = AI(OPENAI_API_KEY, 0.1, model="text-davinci-003", tokens=512, embedding=self.embedding)
         self.serper = Serper(SERPER_API_KEY, self.ai.llm)
         self.source = "file"
         
@@ -150,6 +163,15 @@ class MyApp(App):
                 
             with TabPane("Settings", id="setting_tab"):
 
+
+                yield Label("Source: ")
+                
+                with RadioSet(id="settings_radioset"):
+                    yield RadioButton("Uploaded files", id="radiobtn_files", value=True)
+                    yield RadioButton("Google", id="radiobtn_google")
+                    yield RadioButton("ChatGPT", id="radiobtn_chatgpt")
+
+                
                 yield Horizontal(
                     Button("Temperature", id="settings_label", disabled=True),
                     Input(
@@ -157,13 +179,12 @@ class MyApp(App):
                         value=str(self.ai.temperature), 
                         id="settings_input")
                 )
-                with RadioSet(id="settings_radioset"):
-                    yield RadioButton("Uploaded files", id="radiobtn_files", value=True)
-                    yield RadioButton("Google", id="radiobtn_google")
-                    yield RadioButton("ChatGPT", id="radiobtn_chatgpt")
+                
                 
                 yield Button.success("Save", id="settings_btn")
-                
+           
+            
+
             with TabPane("Upload", id="upload"):
                
                 yield DirectoryTree(Path.home())
@@ -259,7 +280,7 @@ class MyApp(App):
           
 
     def on_mount(self) -> None:
-        self.title = "FoxyIntel v.0.1"
+        self.title = "FoxyIntel v0.1"
 
         self.show_documents()
         
