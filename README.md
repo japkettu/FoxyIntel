@@ -43,8 +43,8 @@ Run docker in interactive mode. This command mounts the home directory to root s
 
 On Linux
 
-`docker run -v $HOME:/root -i -t --mount=source=foxy-intel-vol,target=/app foxy-intel`
+`docker run -v $HOME:/root -i -t --mount=source=foxy-intel-vol,target=/app/chroma.db foxy-intel`
 
 On Windows (PowerShell)
 
-`docker run -v ${HOME}:/root -v foxy-intel-vol:/app -i -t foxy-intel`
+`docker run -v ${HOME}:/root -v foxy-intel-vol:/app/chroma.db -i -t foxy-intel`
