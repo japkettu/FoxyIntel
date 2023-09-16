@@ -29,7 +29,7 @@ Clone repository from GitHub.
 `cd FoxyIntel`
 
 Rename `.env_example` to `.env` and add your OpenAI and Serper API keys to `.env` file.
-Optionally change EMBEDDING_FUNCTION from huggingface to openai by uncommenting and commenting lines. Huggingface is free and slower option which creates 384 dimensional vector while OpenAI costs  $0.0001 / 1K tokens and creates 1536 dimensional vector. 
+Optionally change EMBEDDING_FUNCTION from huggingface to openai by uncommenting and commenting lines. Huggingface is free and slower option which creates 384 dimensional vector while OpenAI costs $0.0001 / 1K tokens and creates 1536 dimensional vector. 
 
 
 Build docker image

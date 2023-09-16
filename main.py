@@ -4,10 +4,10 @@ from dotenv import load_dotenv
 from pathlib import Path
 from decimal import Decimal, InvalidOperation
 import os
-from langchain.document_loaders import TextLoader
+from langchain.document_loaders import TextLoader, PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain.agents.agent_toolkits import (
     create_vectorstore_agent,
@@ -76,15 +76,27 @@ class AI:
         self.answer = None
         self.file = None
         self.remove_file = None
-    def set_temperature(self, temperature):
+    def set_temperature(self, temperature) -> None:
         self.temperature = float(temperature)
         self.llm = OpenAI(openai_api_key=self.api_key, temperature=self.temperature, model=self.model, max_tokens=self.tokens)
     
-    def upload(self):
-        raw_doc = TextLoader(self.file).load()
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    def upload(self) -> bool:
+
+        filetype = self.file.split(".")[-1]
+
+        match filetype:
+            case "txt":
+                raw_doc = TextLoader(self.file).load()
+            case "pdf":
+                raw_doc = PyPDFLoader(self.file).load()
+            case _:
+                return False
+   
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=20, length_function=len)
         docs = text_splitter.split_documents(raw_doc)
-        db = Chroma.from_documents(docs, self.embedding,persist_directory="./chroma.db")
+        db = Chroma.from_documents(docs, self.embedding, persist_directory="./chroma.db")
+        return True
+    
 
     def remove(self):
 
@@ -112,7 +124,7 @@ class AI:
         self.answer = agent_executor.run(command)
         return self.answer
     
-    def get_documents(self):
+    def get_documents(self) -> set:
 
         doc_list = set()
         db = Chroma(persist_directory="./chroma.db", embedding_function=self.embedding)
@@ -241,8 +253,10 @@ class MyApp(App):
         log = self.query_one(Log)
         match event.button.id:
             case "upload_btn":
-                self.ai.upload()
-                log.write_line("[+] Document was uploaded")
+                if (self.ai.upload()):
+                    log.write_line("[+] Document was uploaded successfully")
+                else:
+                    log.write_line("[-] Upload failed. Only PDF and txt documents are supported")
                 self.show_documents()
 
             case "remove_btn":
