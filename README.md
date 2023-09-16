@@ -14,8 +14,6 @@ FoxyIntel is a commandline tool that uses OpenAI API to interact with ChatGPT. I
 
 - ChatGPT option in Settings doesn't work.
 
-- Since FoxyIntel reads only text files, PDF files must be converted to .txt with tools like `pdftotext` or https://pdftotext.com
-
 ## Installation
 
 ### Docker
