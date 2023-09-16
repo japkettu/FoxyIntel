@@ -1,8 +1,9 @@
 chromadb==0.4.10
 langchain==0.0.291
 openai==0.28.0
+openai-whisper==20230314
 pypdf==3.16.0
 python-dotenv==1.0.0
 sentence-transformers==2.2.2
 textual==0.36.0
-tiktoken==0.5.1
+tiktoken

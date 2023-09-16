@@ -1,4 +1,4 @@
-from langchain.llms import OpenAI
+from langchain.llms import OpenAIChat
 from langchain.chat_models import ChatOpenAI
 from dotenv import load_dotenv
 from pathlib import Path
@@ -14,6 +14,7 @@ from langchain.agents.agent_toolkits import (
     VectorStoreToolkit,
     VectorStoreInfo,
 )
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain.utilities import GoogleSerperAPIWrapper
 from langchain.llms.openai import OpenAI
 from langchain.agents import initialize_agent, Tool
@@ -30,16 +31,14 @@ from textual.widgets import (
     Markdown, ListView, 
     ListItem, Label
     )
-from textual.widgets.selection_list import Selection
-from textual.widgets._tabbed_content import ContentTab
+import whisper
+
 
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 SERPER_API_KEY = os.getenv('SERPER_API_KEY')
 EMBEDDING_FUNCTION = os.getenv('EMBEDDING_FUNCTION')
-
-
 
 class Serper:
 
@@ -72,23 +71,43 @@ class AI:
         self.temperature = temperature
         self.tokens = tokens
         self.model = model
-        self.llm = OpenAI(openai_api_key=api_key, temperature=temperature, model=self.model, max_tokens=self.tokens)
+        self.llm = ChatOpenAI(openai_api_key=api_key, temperature=self.temperature, model=self.model, max_tokens=self.tokens)
         self.answer = None
         self.file = None
         self.remove_file = None
+        self.model = whisper.load_model("tiny.en")
+
     def set_temperature(self, temperature) -> None:
         self.temperature = float(temperature)
-        self.llm = OpenAI(openai_api_key=self.api_key, temperature=self.temperature, model=self.model, max_tokens=self.tokens)
-    
+        #self.llm = OpenAI(openai_api_key=self.api_key, temperature=self.temperature, model=self.model, max_tokens=self.tokens)
+        self.llm.temperature = self.temperature
     def upload(self) -> bool:
 
-        filetype = self.file.split(".")[-1]
+        filetype = self.file.split(".")
 
-        match filetype:
+        match filetype[-1]:
             case "txt":
                 raw_doc = TextLoader(self.file).load()
             case "pdf":
                 raw_doc = PyPDFLoader(self.file).load()
+            case "mp3":
+
+                if (len(filetype) == 2):
+                    
+                    result = self.model.transcribe(self.file)
+                    textfile = filetype[0] + ".txt"
+                    with open(textfile, 'w') as f:
+                        for line in result:
+                            f.write(line)
+                            f.write('\n')
+                    
+                    raw_doc = TextLoader(textfile).load()
+
+                    if os.path.exists(textfile):
+                        os.remove(textfile)
+
+                else: 
+                    return False
             case _:
                 return False
    
@@ -112,16 +131,16 @@ class AI:
     def chat(self, command):
 
         db = Chroma(persist_directory="./chroma.db", embedding_function=self.embedding)
-
-        vectorstore_info = VectorStoreInfo(
-            name="test_db",
-            description="testing storing information to vector store",
-            vectorstore=db,
+        
+        retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 6})
+        qa_interface = RetrievalQA.from_chain_type(
+            llm=self.llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True,
         )
-
-        toolkit = VectorStoreToolkit(vectorstore_info=vectorstore_info)
-        agent_executor = create_vectorstore_agent(llm=self.llm, toolkit=toolkit, verbose=False)
-        self.answer = agent_executor.run(command)
+        response = qa_interface(command)
+        self.answer = response["result"]
         return self.answer
     
     def get_documents(self) -> set:
@@ -158,7 +177,7 @@ class MyApp(App):
                 self.embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2", model_kwargs={"device":"cpu"})
 
 
-        self.ai = AI(OPENAI_API_KEY, 0.1, model="text-davinci-003", tokens=512, embedding=self.embedding)
+        self.ai = AI(OPENAI_API_KEY, temperature=0.1, model="gpt-3.5-turbo", tokens=1024, embedding=self.embedding)
         self.serper = Serper(SERPER_API_KEY, self.ai.llm)
         self.source = "file"
         
@@ -185,7 +204,7 @@ class MyApp(App):
 
                 
                 yield Horizontal(
-                    Button("Temperature", id="settings_label", disabled=True),
+                    Button("Temperature (0-1)", id="settings_label", disabled=True),
                     Input(
                         name="Temperature",
                         value=str(self.ai.temperature), 
@@ -194,12 +213,11 @@ class MyApp(App):
                 
                 
                 yield Button.success("Save", id="settings_btn")
-           
-            
+
 
             with TabPane("Upload", id="upload"):
                
-                yield DirectoryTree(Path.home())
+                yield DirectoryTree(Path.home(), id="directorytree")
                 
                 yield Button.success("Upload", id="upload_btn")
             
@@ -280,7 +298,11 @@ class MyApp(App):
         log.write_line(str(event.item.name))
         self.ai.remove_file = str(event.item.name)
 
-
+    @on(TabbedContent.TabActivated)
+    def refresh_directorytree(self, event: TabbedContent.TabActivated):
+        match event.tab.id:
+            case "upload":
+                self.query_one("#directorytree", DirectoryTree).reload()
 
     def show_documents(self):
 
