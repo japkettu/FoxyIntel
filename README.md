@@ -1,6 +1,6 @@
 # FoxyIntel
 
-FoxyIntel is a commandline tool that uses OpenAI API to interact with ChatGPT. It reads text files, stores them to local vector database (ChromaDB) and feeds them to ChatGPT. Additionally user can ask questions using Google via Serper API.
+FoxyIntel is a commandline tool that uses OpenAI API to interact with ChatGPT (gpt-3.5-turbo). It reads text, pdf and mp3 files, stores them to local vector database (ChromaDB) and feeds them to ChatGPT. Additionally user can ask questions using Google via Serper API.
 
 ![image](https://github.com/japkettu/FoxyIntel/assets/10699748/b7e83f48-3644-44d1-b9c8-cfed4383f96f)
 
@@ -12,6 +12,7 @@ FoxyIntel is a commandline tool that uses OpenAI API to interact with ChatGPT. I
 
 ## Known problems
 
+- Whisper language model supports only English for mp3 files
 - ChatGPT option in Settings doesn't work.
 
 ## Installation
