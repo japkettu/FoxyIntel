@@ -1,4 +1,3 @@
-from langchain.llms import OpenAIChat
 from langchain.chat_models import ChatOpenAI
 from dotenv import load_dotenv
 from pathlib import Path
@@ -9,14 +8,8 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
-from langchain.agents.agent_toolkits import (
-    create_vectorstore_agent,
-    VectorStoreToolkit,
-    VectorStoreInfo,
-)
-from langchain.chains import RetrievalQA, ConversationalRetrievalChain
+from langchain.chains import RetrievalQA
 from langchain.utilities import GoogleSerperAPIWrapper
-from langchain.llms.openai import OpenAI
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 from textual.app import App, ComposeResult
@@ -79,8 +72,8 @@ class AI:
 
     def set_temperature(self, temperature) -> None:
         self.temperature = float(temperature)
-        #self.llm = OpenAI(openai_api_key=self.api_key, temperature=self.temperature, model=self.model, max_tokens=self.tokens)
         self.llm.temperature = self.temperature
+        
     def upload(self) -> bool:
 
         filetype = self.file.split(".")
