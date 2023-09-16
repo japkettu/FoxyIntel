@@ -68,12 +68,12 @@ class AI:
         self.answer = None
         self.file = None
         self.remove_file = None
-        self.model = whisper.load_model("tiny.en")
+        self.whisper = whisper.load_model("tiny.en")
 
     def set_temperature(self, temperature) -> None:
         self.temperature = float(temperature)
         self.llm.temperature = self.temperature
-        
+
     def upload(self) -> bool:
 
         filetype = self.file.split(".")
@@ -87,7 +87,7 @@ class AI:
 
                 if (len(filetype) == 2):
                     
-                    result = self.model.transcribe(self.file)
+                    result = self.whisper.transcribe(self.file)
                     textfile = filetype[0] + ".txt"
                     with open(textfile, 'w') as f:
                         for line in result:
