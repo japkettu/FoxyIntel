@@ -19,16 +19,17 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 
+FROM base AS python_debs
 
+COPY --from=dependencies /opt/venv /opt/venv
 
-FROM base AS runtime
+FROM python_debs AS runtime
 
 WORKDIR /app
 
 COPY main.py .
 COPY style.tcss .
 COPY .env .
-COPY --from=dependencies /opt/venv /opt/venv
 ENV PATH /opt/venv/bin:$PATH
 
 CMD ["python", "./main.py"]

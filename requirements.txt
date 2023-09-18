@@ -1,3 +1,4 @@
+baseten
 chromadb==0.4.10
 langchain==0.0.291
 openai==0.28.0
